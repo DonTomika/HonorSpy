@@ -228,6 +228,14 @@ local options = {
 			get = false,
 			set = function(info, playerName) HonorSpy:Report(playerName) end
 		},
+		sync = {
+			type = 'input',
+			name = 'Send all data to target',
+			desc = 'Send all data to target',
+			usage = 'target_name',
+			get = false,
+			set = function(info, targetName) HonorSpy:broadcast_to_target(targetName) end
+		}
 	}
 }
 LibStub("AceConfig-3.0"):RegisterOptionsTable("HonorSpy", options, {"honorspy", "hs"})
@@ -451,6 +459,43 @@ function HonorSpy:PLAYER_DEAD()
 	if (count > 0) then
 		broadcast(self:Serialize("filtered_players", filtered_players), true)
 	end
+end
+
+function HonorSpy:broadcast_to_target(targetName)
+	local filtered_players, t, count, total = {}, {}, 0, 0;
+
+	if (targetName == '') then
+		return
+	end
+
+	for playerName, player in pairs(self.db.factionrealm.currentStandings) do
+		table.insert(t, {playerName, player, player.last_checked or 0})
+	end
+
+	-- sort data by last seen (desc) for faster sync
+	local sort_func = function(a,b)
+		return a[3] > b[3]
+	end
+	table.sort(t, sort_func)
+
+	print("HonorSpy: Syncing all data to " .. targetName)
+
+	for idx, row in pairs(t) do
+		local playerName, player = row[1], row[2]
+
+		filtered_players[playerName] = player;
+		count = count + 1;
+		total = total + 1;
+		if (count == 10) then
+			HonorSpy:SendCommMessage(commPrefix, self:Serialize("filtered_players", filtered_players), "WHISPER", targetName, "ALERT");
+			filtered_players, count = {}, 0;
+		end
+	end
+	if (count > 0) then
+		HonorSpy:SendCommMessage(commPrefix, self:Serialize("filtered_players", filtered_players), "WHISPER", targetName, "ALERT");
+	end
+
+	SendChatMessage("HonorSpy: sending " .. total .. " records", "WHISPER", nil, targetName);
 end
 
 function FAKE_PLAYERS_FILTER(_s, e, msg, ...)

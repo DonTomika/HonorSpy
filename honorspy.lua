@@ -235,7 +235,11 @@ LibStub("AceConfig-3.0"):RegisterOptionsTable("HonorSpy", options, {"honorspy", 
 function HonorSpy:BuildStandingsTable(sort_by)
 	local t = { }
 	for playerName, player in pairs(HonorSpy.db.factionrealm.currentStandings) do
-		table.insert(t, {playerName, player.class, player.thisWeekHonor or 0, player.lastWeekHonor or 0, player.standing or 0, player.RP or 0, player.rank or 0, player.last_checked or 0})
+		if (playerName == UnitName("player")) then
+			table.insert(t, {playerName, player.class, HonorSpy.db.char.estimated_honor, player.lastWeekHonor or 0, player.standing or 0, player.RP or 0, player.rank or 0, player.last_checked or 0})
+		else
+			table.insert(t, {playerName, player.class, player.thisWeekHonor or 0, player.lastWeekHonor or 0, player.standing or 0, player.RP or 0, player.rank or 0, player.last_checked or 0})
+		end
 	end
 	
 	local sort_column = 3; -- ThisWeekHonor
